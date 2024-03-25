@@ -30,21 +30,36 @@
 # \comb{1024}{3}p^3. Create a chart showing your results compared to the expectation.
 
 import numpy as np
-
 def split(x):
     """
     Split an n x n matrix x to four n/2 x n/2 submatrices, handling both even and odd n (A is the top left, B is the
     top right, C is the bottom left, and D is the bottom right)
     """
-    n = x.shape[0]
-    half = n // 2
+    if x.shape[0] % 2 == 0:
+        n = x.shape[0]
+        half = n // 2
+    
+        A = x[:half, :half]
+        B = x[:half, half:]
+        C = x[half:, :half]
+        D = x[half:, half:]
+    
+        return A, B, C, D
+    else:
+        # Add single row and column of zeroes to make n even
+        y = np.zeros((x.shape[0] + 1, x.shape[1] + 1)).astype(int)
+        y[:x.shape[0], :x.shape[1]] = x
+        return split(y)
 
-    A = x[:half, :half]
-    B = x[:half, half:]
-    C = x[half:, :half]
-    D = x[half:, half:]
-
-    return A, B, C, D
+def pad(x):
+    """
+    Pad an n x n matrix x with zeroes to make n a power of 2. Used when initial matrix for Strassen's algorithm is not
+    even.
+    """
+    n = 2 ** np.ceil(np.log2(x.shape[0])).astype(int)
+    y = np.zeros((n, n), dtype=int)
+    y[:x.shape[0], :x.shape[1]] = x
+    return y
 
 def strassen(x, y):
     """
@@ -98,14 +113,17 @@ def standard(x, y):
     return result
 
 def main():
-    # Test Strassen's algorithm
-    x = np.array([[1, 2], [3, 4]])
-    y = np.array([[5, 6], [7, 8]])
+    # Preprocess: Check if odd, pad if necessary
+    x = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+    y = np.array([[9, 8, 7], [6, 5, 4], [3, 2, 1]])
+    if x.shape[0] % 2 != 0:
+        x_copy = pad(x)
+        y_copy = pad(y)
+        result = strassen(x_copy, y_copy)
+        # Postprocess: Remove padding
+        result = result[:x.shape[0], :y.shape[1]]
+        print(result)
 
-    print(strassen(x, y))
-
-    # Test standard matrix multiplication algorithm
     print(standard(x, y))
-
 if __name__ == "__main__":
     main()
