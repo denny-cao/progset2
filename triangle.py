@@ -17,7 +17,6 @@ import random
 import math
 import matplotlib.pyplot as plt
 
-# Create a random graph on 1024 vertices where each edge is included with probability p
 def create_graph(n, p):
     graph = np.zeros((n, n))
     for i in range(n):
@@ -27,17 +26,14 @@ def create_graph(n, p):
                 graph[j][i] = 1
     return graph
 
-# Count the number of triangles in the graph using Strassen's matrix multiplication
 def count_triangles(G):
     A = np.dot(G, G)
     A = np.dot(A, G)
     return np.trace(A)/6
 
-# Calculate the expected number of count of triangles
 def expected_count(n, p):
     return math.comb(n, 3) * p**3
 
-# Create a chart showing the results compared to the expectation
 def create_chart(n, ps, triangles):
     plt.plot(ps, triangles, label='Count of triangles')
     plt.plot(ps, [expected_count(n, p) for p in ps], label='Expected count of triangles')
