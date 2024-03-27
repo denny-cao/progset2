@@ -30,6 +30,10 @@
 # \comb{1024}{3}p^3. Create a chart showing your results compared to the expectation.
 
 import numpy as np
+import time
+import matplotlib.pyplot as plt
+
+
 def split(x):
     """
     Split an n x n matrix x to four n/2 x n/2 submatrices, handling both even and odd n (A is the top left, B is the
@@ -38,18 +42,19 @@ def split(x):
     if x.shape[0] % 2 == 0:
         n = x.shape[0]
         half = n // 2
-    
+
         A = x[:half, :half]
         B = x[:half, half:]
         C = x[half:, :half]
         D = x[half:, half:]
-    
+
         return A, B, C, D
     else:
         # Add single row and column of zeroes to make n even
         y = np.zeros((x.shape[0] + 1, x.shape[1] + 1)).astype(int)
         y[:x.shape[0], :x.shape[1]] = x
         return split(y)
+
 
 def pad(x):
     """
@@ -61,29 +66,30 @@ def pad(x):
     y[:x.shape[0], :x.shape[1]] = x
     return y
 
-def strassen(x, y):
+
+def strassen(x, y, n_0):
     """
     Strassen's algorithm for matrix multiplication
     """
 
     # Base case (n=1)
-    if len(x) == 1:
-        return x * y
+    if x.shape[0] <= n_0:
+        return standard(x, y)
 
     # Split matrices into submatrices
     A, B, C, D = split(x)
     E, F, G, H = split(y)
 
     # Recursively compute products
-    P1 = strassen(A, F - H)
-    P2 = strassen(A + B, H)
-    P3 = strassen(C + D, E)
-    P4 = strassen(D, G - E)
-    P5 = strassen(A + D, E + H)
-    P6 = strassen(B - D, G + H)
-    P7 = strassen(A - C, E + F)
+    P1 = strassen(A, F - H, n_0)
+    P2 = strassen(A + B, H, n_0)
+    P3 = strassen(C + D, E, n_0)
+    P4 = strassen(D, G - E, n_0)
+    P5 = strassen(A + D, E + H, n_0)
+    P6 = strassen(B - D, G + H, n_0)
+    P7 = strassen(A - C, E + F, n_0)
 
-    # Compute submatrices of the results 
+    # Compute submatrices of the results
     result1 = -P2 + P4 + P5 + P6
     result2 = P1 + P2
     result3 = P3 + P4
@@ -93,6 +99,40 @@ def strassen(x, y):
     top = np.hstack((result1, result2))
     bottom = np.hstack((result3, result4))
     return np.vstack((top, bottom))
+
+def old_strassen(x, y, n_0=1):
+    """
+    Strassen's algorithm for matrix multiplication
+    """
+
+    # Old algorithm with no cutoff
+    if len(x) == 1:
+        return x * y
+
+    # Split matrices into submatrices
+    A, B, C, D = split(x)
+    E, F, G, H = split(y)
+
+    # Recursively compute products
+    P1 = strassen(A, F - H, 1)
+    P2 = strassen(A + B, H, 1)
+    P3 = strassen(C + D, E, 1)
+    P4 = strassen(D, G - E, 1)
+    P5 = strassen(A + D, E + H, 1)
+    P6 = strassen(B - D, G + H, 1)
+    P7 = strassen(A - C, E + F, 1)
+
+    # Compute submatrices of the results
+    result1 = -P2 + P4 + P5 + P6
+    result2 = P1 + P2
+    result3 = P3 + P4
+    result4 = P1 - P3 + P5 - P7
+
+    # Combine submatrices into the results
+    top = np.hstack((result1, result2))
+    bottom = np.hstack((result3, result4))
+    return np.vstack((top, bottom))
+
 
 def standard(x, y):
     """
@@ -112,18 +152,64 @@ def standard(x, y):
 
     return result
 
-def main():
-    # Preprocess: Check if odd, pad if necessary
-    x = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
-    y = np.array([[9, 8, 7], [6, 5, 4], [3, 2, 1]])
-    if x.shape[0] % 2 != 0:
-        x_copy = pad(x)
-        y_copy = pad(y)
-        result = strassen(x_copy, y_copy)
-        # Postprocess: Remove padding
-        result = result[:x.shape[0], :y.shape[1]]
-        print(result)
+def measure_time(func, *args):
+    """
+    Measure the time taken to run a function with arguments
+    """
+    start = time.time()
+    result = func(*args)
+    end = time.time()
+    return result, end - start
 
-    print(standard(x, y))
+
+def main():
+
+    # Test Strassen's algorithm
+    matrix_sizes = [2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
+    n_0_values = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512]
+
+    execution_times = {n_0: {'Strassen': [], 'Old': []} for n_0 in n_0_values}
+
+    for n_0 in n_0_values:
+        for size in matrix_sizes:
+            x = np.random.randint(0, 3, (size, size))
+            y = np.random.randint(0, 3, (size, size))
+
+            #account for odd sized matrix
+            original_size = size
+            if size % 2 != 0:
+                x = pad(x)
+                y = pad(y)
+                size += 1
+
+            _, time_strassen = measure_time(strassen, x, y, n_0)
+            if size == original_size:
+                _, time_standard = measure_time(old_strassen, x, y)
+            else:
+                _, time_standard = measure_time(old_strassen, x[:original_size, :original_size], y[:original_size, :original_size])
+
+            execution_times[n_0]['Strassen'].append(time_strassen)
+            execution_times[n_0]['Old'].append(time_standard)
+
+    print(execution_times)
+
+    for n_0, times in execution_times.items():
+        plt.figure(figsize=(10, 6))
+
+        plt.plot(matrix_sizes, times['Strassen'], label='Crossover', marker='o')
+        plt.plot(matrix_sizes, times['Old'], label='No Crossover', marker='x')
+
+        # Add labels and title
+        plt.xlabel('Matrix size')
+        plt.ylabel('Execution time (s)')
+        plt.title(f'Execution time for n_0={n_0}')
+        plt.legend()
+        plt.grid(True, which='both', ls='--')
+        plt.yscale('log')
+        plt.xscale('log', base=2)
+
+        plt.show()
+
+
 if __name__ == "__main__":
     main()
