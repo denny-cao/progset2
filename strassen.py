@@ -52,13 +52,13 @@ def strassen(x, y, n_0=1):
     E, F, G, H = split(y)
 
     # Recursively compute products
-    P1 = strassen(A, F - H, n_0)
-    P2 = strassen(A + B, H, n_0)
-    P3 = strassen(C + D, E, n_0)
-    P4 = strassen(D, G - E, n_0)
-    P5 = strassen(A + D, E + H, n_0)
-    P6 = strassen(B - D, G + H, n_0)
-    P7 = strassen(A - C, E + F, n_0)
+    P1 = standard(A, F - H)
+    P2 = standard(A + B, H)
+    P3 = standard(C + D, E)
+    P4 = standard(D, G - E)
+    P5 = standard(A + D, E + H)
+    P6 = standard(B - D, G + H)
+    P7 = standard(A - C, E + F)
 
     # Compute submatrices of the results
     result1 = -P2 + P4 + P5 + P6
@@ -99,14 +99,14 @@ def winograd(x, y, n_0=1):
     a, b, c, d = split(x)
     A, C, B, D = split(y)
 
-    t = winograd(a,A, n_0)
-    u = winograd((c-a), (C-D), n_0)
-    v = winograd((c+d), (C-A), n_0)
-    w = t + winograd((c + d - a), (A+D-C), n_0)
+    t = standard(a,A)
+    u = standard((c-a), (C-D))
+    v = standard((c+d), (C-A))
+    w = t + standard((c + d - a), (A+D-C))
 
-    result1 = t + winograd(b, B, n_0)
-    result2 = w + v + winograd((a + b - c - d),D, n_0)
-    result3 = w + u + winograd(d, (B + C - A - D), n_0)
+    result1 = t + standard(b, B)
+    result2 = w + v + standard((a + b - c - d),D)
+    result3 = w + u + standard(d, (B + C - A - D))
     result4 = w + u + v
 
     top = np.hstack((result1, result2))

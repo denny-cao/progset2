@@ -1,10 +1,45 @@
-from strassen import strassen, winograd, standard
+from strassen import strassen, winograd, standard, split
 import time
 import numpy as np
 import matplotlib.pyplot as plt
 import csv
 import os
 
+NUM_TRIALS = 5
+
+def strassen_test(x, y, n_0=1):
+    """
+    Strassen's algorithm for matrix multiplication with only 1 call to strassen to find the optimal crossover point
+    """
+
+    # Base case (stop recursion at crossover point n_0 and use standard algorithm)
+    if x.shape[0] <= n_0:
+        return standard(x, y)
+
+    # Split matrices into submatrices
+    A, B, C, D = split(x)
+    E, F, G, H = split(y)
+
+    # Recursively compute products
+    P1 = standard(A, F - H)
+    P2 = standard(A + B, H)
+    P3 = standard(C + D, E)
+    P4 = standard(D, G - E)
+    P5 = standard(A + D, E + H)
+    P6 = standard(B - D, G + H)
+    P7 = standard(A - C, E + F)
+
+    # Compute submatrices of the results
+    result1 = -P2 + P4 + P5 + P6
+    result2 = P1 + P2
+    result3 = P3 + P4
+    result4 = P1 - P3 + P5 - P7
+
+    # Combine submatrices into the results
+    top = np.hstack((result1, result2))
+    bottom = np.hstack((result3, result4))
+
+    return np.vstack((top, bottom))
 def measure_time(func, *args):
     """
     Measure the time taken to run a function with arguments
@@ -159,6 +194,62 @@ def test():
 
     print('All tests passed!')
 
+def experiment3():
+    """
+    Run strassen_test and compare with standard for multiple inputs n to find the optimal crossover point
+    """
+
+    # Test Strassen's algorithm
+    matrix_sizes = [x for x in range(1,101)]
+
+    # Plot execution times for different matrix sizes
+
+    execution_times_strassen = []
+    execution_times_standard = []
+
+    print('Matrix Size & Average Time Strassen & Average Time Standard \\\\')
+    print('\\hline')
+    for size in matrix_sizes:
+        avg_time_strassen = 0
+        avg_time_standard = 0
+        for i in range(NUM_TRIALS):
+            x = np.random.randint(0, 1, (size, size))
+            y = np.random.randint(0, 1, (size, size))
+
+            _, time_strassen = measure_time(strassen_test, x, y, 1)
+            _, time_standard = measure_time(standard, x, y)
+
+            avg_time_strassen += time_strassen
+            avg_time_standard += time_standard
+
+        execution_times_strassen.append(avg_time_strassen / NUM_TRIALS)
+        execution_times_standard.append(avg_time_standard / NUM_TRIALS)
+        
+        print(f'{size} & {avg_time_strassen / NUM_TRIALS} & {avg_time_standard / NUM_TRIALS} \\\\')
+
+    # Create CSV with data
+    with open('experiment3.csv', 'w', newline='') as f:
+        fieldnames = ['Matrix Size', 'Strassen w/Crossover', 'Standard']
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+
+        for i in range(len(matrix_sizes)):
+            writer.writerow({'Matrix Size': matrix_sizes[i], 'Strassen w/Crossover': execution_times_strassen[i], 'Standard': execution_times_standard[i]})
+
+    # Graph the results using log scale for x axis
+
+    plt.plot(matrix_sizes, execution_times_strassen, label='Strassen w/Crossover')
+    plt.plot(matrix_sizes, execution_times_standard, label='Standard')
+    plt.xlabel('Matrix Size')
+    plt.ylabel('Execution Time (s)')
+    plt.title('Comparison of Standard and Strassen Algorithms')
+    plt.legend()
+    plt.xscale('log')
+    plt.savefig('plots/experiment3.png')
+    plt.clf()
+
+    print('Experiment completed!')
+
 def test2():
     """
     Test with matrix size 65
@@ -179,4 +270,4 @@ def test2():
 
 
 if __name__ == '__main__':
-    test2()
+    experiment3()
