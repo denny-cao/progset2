@@ -99,14 +99,14 @@ def winograd(x, y, n_0=1):
     a, b, c, d = split(x)
     A, C, B, D = split(y)
 
-    t = standard(a,A)
-    u = standard((c-a), (C-D))
-    v = standard((c+d), (C-A))
-    w = t + standard((c + d - a), (A+D-C))
+    t = winograd(a,A)
+    u = winograd((c-a), (C-D))
+    v = winograd((c+d), (C-A))
+    w = t + winograd((c + d - a), (A+D-C))
 
-    result1 = t + standard(b, B)
-    result2 = w + v + standard((a + b - c - d),D)
-    result3 = w + u + standard(d, (B + C - A - D))
+    result1 = t + winograd(b, B)
+    result2 = w + v + winograd((a + b - c - d),D)
+    result3 = w + u + winograd(d, (B + C - A - D))
     result4 = w + u + v
 
     top = np.hstack((result1, result2))
