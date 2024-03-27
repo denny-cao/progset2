@@ -27,8 +27,8 @@ def create_graph(n, p):
     return graph
 
 def count_triangles(G):
-    A = np.dot(G, G)
-    A = np.dot(A, G)
+    A = strassen.strassen(G, G)
+    A = strassen.strassen(A, G)
     return np.trace(A)/6
 
 def expected_count(n, p):
