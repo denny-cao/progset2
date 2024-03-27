@@ -159,5 +159,24 @@ def test():
 
     print('All tests passed!')
 
+def test2():
+    """
+    Test with matrix size 65
+    """
+
+    n = 128
+
+    x = np.random.randint(0, 1, (n, n))
+    y = np.random.randint(0, 1, (n, n))
+
+    # Time for strassen and original
+
+    _, time_strassen = measure_time(strassen, x, y, 1)
+    _, time_standard = measure_time(standard, x, y)
+
+    print(f'Strassen: {time_strassen}')
+    print(f'Standard: {time_standard}')
+
+
 if __name__ == '__main__':
-    experiment2()
+    test2()
