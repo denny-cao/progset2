@@ -16,49 +16,27 @@
 # matrices, possibly of this form (You may assume integer inputs.) You need not try all of these, but do test your
 # algorithm adequately. 
 
-# Task 3: Triangle in random graphs: Recall that you can represent the adjacency matrix of a graph by a matrix A.
-# Consider an undirected graph. It turns out that A^3 can be used to determine the number of triangles in a gram: the
-# (ij)th entry in the matrix A^2 counts the paths from i to j of length two, and the (ij)th entry in the matrix A^3
-# counts the path from i to j of length 3. To count the number of triangles in a graph, we can simply add the entries
-# in the diagonal, and divide by 6. This is because the jth diagonal entry counts the number of paths of length 3 from
-# j to j. Each such path is a triangle, and each triangle is counted 6 times (for each of the vertices in the triangle,
-# it is counted once in each direction).
-
-# Create a random graph on 1024 vertices where each edge is included with probability p for each of the following
-# values fo p: p = 0.01, 0.02, 0.03, 0.04, and 0.05. Use your (Strassen's) matrix multiplication code to count the
-# number of triangels in each of the graphs, and compare it to the expected number of triangles, which is
-# \comb{1024}{3}p^3. Create a chart showing your results compared to the expectation.
-
 import numpy as np
-import time
-import matplotlib.pyplot as plt
-
 
 def split(x):
     """
     Split an n x n matrix x to four n/2 x n/2 submatrices, handling both even and odd n (A is the top left, B is the
     top right, C is the bottom left, and D is the bottom right)
     """
+
     n = x.shape[0]
-    half = n // 2
-
-    A = x[:half, :half]
-    B = x[:half, half:]
-    C = x[half:, :half]
-    D = x[half:, half:]
-
-    return A, B, C, D
-
-def pad(x):
-    """
-    Pad an n x n matrix x with zeroes to make n a power of 2. Used when initial matrix for Strassen's algorithm is not
-    even.
-    """
-
-    n = 2 ** np.ceil(np.log2(x.shape[0])).astype(int)
-    y = np.zeros((n, n), dtype=int)
-    y[:x.shape[0], :x.shape[1]] = x
-    return y
+    if n % 2 == 0:
+        half = n // 2
+    
+        A = x[:half, :half]
+        B = x[:half, half:]
+        C = x[half:, :half]
+        D = x[half:, half:]
+    
+        return A, B, C, D
+    else:
+        x = np.pad(x, ((0, 1), (0, 1)))
+        return split(x)
 
 def strassen(x, y, n_0=1):
     """
@@ -109,66 +87,9 @@ def standard(x, y):
 
     return result
 
-def measure_time(func, *args):
-    """
-    Measure the time taken to run a function with arguments
-    """
-    start = time.time()
-    result = func(*args)
-    end = time.time()
-    return result, end - start
-
-# def main():
-# 
-#     # Test Strassen's algorithm
-#     matrix_sizes = [2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
-#     n_0_values = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512]
-# 
-#     execution_times = {n_0: {'Strassen': [], 'Old': []} for n_0 in n_0_values}
-# 
-#     for n_0 in n_0_values:
-#         for size in matrix_sizes:
-#             x = np.random.randint(0, 3, (size, size))
-#             y = np.random.randint(0, 3, (size, size))
-# 
-#             #account for odd sized matrix
-#             original_size = size
-#             if size % 2 != 0:
-#                 x = pad(x)
-#                 y = pad(y)
-#                 size += 1
-# 
-#             _, time_strassen = measure_time(strassen, x, y, n_0)
-#             if size == original_size:
-#                 _, time_standard = measure_time(old_strassen, x, y)
-#             else:
-#                 _, time_standard = measure_time(old_strassen, x[:original_size, :original_size], y[:original_size, :original_size])
-# 
-#             execution_times[n_0]['Strassen'].append(time_strassen)
-#             execution_times[n_0]['Old'].append(time_standard)
-# 
-#     print(execution_times)
-# 
-#     for n_0, times in execution_times.items():
-#         plt.figure(figsize=(10, 6))
-# 
-#         plt.plot(matrix_sizes, times['Strassen'], label='Crossover', marker='o')
-#         plt.plot(matrix_sizes, times['Old'], label='No Crossover', marker='x')
-# 
-#         # Add labels and title
-#         plt.xlabel('Matrix size')
-#         plt.ylabel('Execution time (s)')
-#         plt.title(f'Execution time for n_0={n_0}')
-#         plt.legend()
-#         plt.grid(True, which='both', ls='--')
-#         plt.yscale('log')
-#         plt.xscale('log', base=2)
-# 
-#         plt.show()
-
 def winograd(x, y, n_0=1):
     """
-    Winograd's algorithm for matrix multiplication. 
+    Winograd's algorithm for matrix multiplication.
     """
 
     if len(x) <= n_0:
@@ -192,33 +113,3 @@ def winograd(x, y, n_0=1):
     bottom = np.hstack((result3, result4))
 
     return np.vstack((top, bottom))
-
-def main():
-    # Make x and y a random 23x23 matrix_sizes
-    x = np.random.randint(1, 3, (23, 23))
-    y = np.random.randint(1, 3, (23, 23))
-    print("x")
-    print(x)
-    print("y")
-    print(y)
-    original_size = x.shape[0]
-    if original_size % 2 != 0:
-        x = pad(x)
-        y = pad(y)
-
-        print("Standard")
-        print(standard(x, y)[:original_size, :original_size])
-        print("Strassen")
-        print(strassen(x, y)[:original_size, :original_size])
-        print("Winograd")
-        print(winograd(x, y)[:original_size, :original_size])
-    else:
-        print("Standard")
-        print(standard(x, y))
-        print("Strassen")
-        print(strassen(x, y))
-        print("Winograd")
-        print(winograd(x, y))
-
-if __name__ == "__main__":
-    main()
