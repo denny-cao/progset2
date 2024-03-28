@@ -118,3 +118,5 @@ def main():
             for i in range(dim):
                 print(result[i, i])
 
+if __name__ == "__main__":
+    main()
