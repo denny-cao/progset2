@@ -99,24 +99,29 @@ def winograd(x, y, n_0=1):
 
 def main():
     if len(sys.argv) != 4:
-        print("Usage: python strassen.py <n>")
+        print("Usage: python strassen.py <flag> <dim> <input_file>")
         sys.exit(1)
-    else:
-        if sys.argv[1] == 0: # Flag for autograder
-            dim = sys.argv[2]
-            input_file = sys.argv[3]
-
-            # Read input matrices
-            with open(input_file, 'r') as f:
-                # First d^2 lines are for first matrix A, then next d^2 lines are for second matrix B
-                A = np.array([list(map(int, f.readline().split())) for _ in range(dim)])
-                B = np.array([list(map(int, f.readline().split())) for _ in range(dim)])
-
-            # Compute product using Strassen's algorithm
-            result = strassen(A, B)
+    if int(sys.argv[1]) == 0: 
+        dim = int(sys.argv[2])
+        input_file = sys.argv[3]
+    
+        # Read input matrices
+        with open(input_file, 'r') as f:
+            # Read matrices from file
+            A = np.zeros((dim, dim))
+            B = np.zeros((dim, dim))
+            for i in range(dim):
+                for j in range(dim):
+                    A[i, j] = int(f.readline())
+            for i in range(dim):
+                for j in range(dim):
+                    B[i, j] = int(f.readline())
+    
+            # Compute product using Strassen's algorithm, removing padding if necessary
+            result = strassen(A, B)[:dim, :dim]
             # Print diagonal elements of the result matrix
             for i in range(dim):
-                print(result[i, i])
-
+                print(int(result[i, i]))
+    
 if __name__ == "__main__":
     main()
