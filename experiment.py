@@ -7,13 +7,13 @@ import os
 
 NUM_TRIALS = 5
 
-def strassen_test(x, y, n_0=1):
+def strassen_test(x, y):
     """
     Strassen's algorithm for matrix multiplication with only 1 call to strassen to find the optimal crossover point
     """
 
     # Base case (stop recursion at crossover point n_0 and use standard algorithm)
-    if x.shape[0] <= n_0:
+    if x.shape[0] <= 1:
         return standard(x, y)
 
     # Split matrices into submatrices
@@ -40,6 +40,34 @@ def strassen_test(x, y, n_0=1):
     bottom = np.hstack((result3, result4))
 
     return np.vstack((top, bottom))
+
+def winograd_test(x, y):
+    """
+    Winograd's algorithm for matrix multiplication.
+    """
+
+    if len(x) <= 1:
+        return standard(x, y)
+
+    # Split matrices into submatrices
+    a, b, c, d = split(x)
+    A, C, B, D = split(y)
+
+    t = standard(a,A)
+    u = standard((c-a), (C-D))
+    v = standard((c+d), (C-A))
+    w = t + standard((c + d - a), (A+D-C))
+
+    result1 = t + standard(b, B)
+    result2 = w + v + standard((a + b - c - d),D)
+    result3 = w + u + standard(d, (B + C - A - D))
+    result4 = w + u + v
+
+    top = np.hstack((result1, result2))
+    bottom = np.hstack((result3, result4))
+
+    return np.vstack((top, bottom))
+
 def measure_time(func, *args):
     """
     Measure the time taken to run a function with arguments
@@ -216,7 +244,7 @@ def experiment3():
             x = np.random.randint(0, 1, (size, size))
             y = np.random.randint(0, 1, (size, size))
 
-            _, time_strassen = measure_time(strassen_test, x, y, 1)
+            _, time_strassen = measure_time(strassen_test, x, y)
             _, time_standard = measure_time(standard, x, y)
 
             avg_time_strassen += time_strassen
@@ -255,6 +283,56 @@ def experiment4():
     Run winograd_test and compare with standard for multiple inputs n to find the optimal crossover point
     """
 
+    # Test Strassen's algorithm
+    matrix_sizes = [x for x in range(1,101)]
+
+    # Plot execution times for different matrix sizes
+
+    execution_times_winograd = []
+    execution_times_standard = []
+
+    print('Matrix Size & Average Time Winograd & Average Time Standard \\\\')
+    print('\\hline')
+    for size in matrix_sizes:
+        avg_time_winograd = 0
+        avg_time_standard = 0
+        for i in range(NUM_TRIALS):
+            x = np.random.randint(0, 1, (size, size))
+            y = np.random.randint(0, 1, (size, size))
+
+            _, time_winograd = measure_time(winograd_test, x, y)
+            _, time_standard = measure_time(standard, x, y)
+
+            avg_time_winograd += time_winograd
+            avg_time_standard += time_standard
+
+        execution_times_winograd.append(avg_time_winograd / NUM_TRIALS)
+        execution_times_standard.append(avg_time_standard / NUM_TRIALS)
+        
+        print(f'{size} & {avg_time_winograd / NUM_TRIALS} & {avg_time_standard / NUM_TRIALS} \\\\')
+
+    # Create CSV with data
+    with open('experiment4.csv', 'w', newline='') as f:
+        fieldnames = ['Matrix Size', 'Winograd w/Crossover', 'Standard']
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+
+        for i in range(len(matrix_sizes)):
+            writer.writerow({'Matrix Size': matrix_sizes[i], 'Winograd w/Crossover': execution_times_winograd[i], 'Standard': execution_times_standard[i]})
+
+    # Graph the results using log scale for x axis
+
+    plt.plot(matrix_sizes, execution_times_winograd, label='Winograd w/Crossover')
+    plt.plot(matrix_sizes, execution_times_standard, label='Standard')
+    plt.xlabel('Matrix Size')
+    plt.ylabel('Execution Time (s)')
+    plt.title('Comparison of Standard and Winograd Algorithms')
+    plt.legend()
+    plt.xscale('log')
+    plt.savefig('plots/experiment4.png')
+    plt.clf()
+
+    print('Experiment completed!')
 
 def test2():
     """
@@ -274,6 +352,62 @@ def test2():
     print(f'Strassen: {time_strassen}')
     print(f'Standard: {time_standard}')
 
+def experiment5():
+    """
+    See what happens with different matrix entries
+    """
+
+    # Test Strassen's algorithm
+    matrix_sizes = [x for x in range(1,101)]
+
+    # Plot execution times for different matrix sizes
+
+    execution_times_strassen = []
+    execution_times_standard = []
+
+    print('Matrix Size & Average Time Strassen & Average Time Standard \\\\')
+    print('\\hline')
+    for size in matrix_sizes:
+        avg_time_strassen = 0
+        avg_time_standard = 0
+        for i in range(NUM_TRIALS):
+            x = np.random.randint(2**30, 2**31, (size, size))
+            y = np.random.randint(2**30, 2**31, (size, size))
+
+            _, time_strassen = measure_time(strassen_test, x, y)
+            _, time_standard = measure_time(standard, x, y)
+
+            avg_time_strassen += time_strassen
+            avg_time_standard += time_standard
+
+        execution_times_strassen.append(avg_time_strassen / NUM_TRIALS)
+        execution_times_standard.append(avg_time_standard / NUM_TRIALS)
+        
+        print(f'{size} & {avg_time_strassen / NUM_TRIALS} & {avg_time_standard / NUM_TRIALS} \\\\')
+
+    # Create CSV with data
+    with open('experiment3.csv', 'w', newline='') as f:
+        fieldnames = ['Matrix Size', 'Strassen w/Crossover', 'Standard']
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+
+        for i in range(len(matrix_sizes)):
+            writer.writerow({'Matrix Size': matrix_sizes[i], 'Strassen w/Crossover': execution_times_strassen[i], 'Standard': execution_times_standard[i]})
+
+    # Graph the results using log scale for x axis
+
+    plt.plot(matrix_sizes, execution_times_strassen, label='Strassen w/Crossover')
+    plt.plot(matrix_sizes, execution_times_standard, label='Standard')
+    plt.xlabel('Matrix Size')
+    plt.ylabel('Execution Time (s)')
+    plt.title('Comparison of Standard and Strassen Algorithms')
+    plt.legend()
+    plt.xscale('log')
+    plt.savefig('plots/experiment3.png')
+    plt.clf()
+
+    print('Experiment completed!')
+
 
 if __name__ == '__main__':
-    experiment3()
+    experiment5()

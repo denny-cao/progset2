@@ -129,12 +129,11 @@ are a total of $n$ multiplications and $n-1$ additions.
 For \texttt{strassen}, we only run ``one layer'' of the algorithm, with the subproblems using \texttt{standard} in
 order to calculate the resulting matrix. There are two cases:
 \begin{enumerate}
-    \item $n$ is a power of 2. This means that the runtime of \texttt{strassen} is
+    \item $n$ is even. This means that the runtime of \texttt{strassen} is
         \[
 T'(n)=7T(n/2)+18(n/2)^2
         \] 
-as there are 7 subproblems and 18 matrix additions ($(n/2)^2$ elements in each) in the algorithm, since with powers
-of 2, we can continuously halve the matrix and the subproblems will remain powers of 2 (even).
+as there are 7 subproblems and 18 matrix additions ($(n/2)^2$ elements in each) in the algorithm, since we can evenly split submatrices.
 \\
 
 We can now set the two algorithms equal to each other and solve for $n$:
@@ -146,7 +145,7 @@ We can now set the two algorithms equal to each other and solve for $n$:
      n &= 15
 \end{align*}
 We can see that the crossover point is $n_0 = 15$.
-\item $n$ is not a power of 2. This means that the runtime of \texttt{strassen} is 
+\item $n$ is odd. This means that the runtime of \texttt{strassen} is 
 \[
 T'(n) = 7T((n+1)/2) + 18((n+1)/2)^2
 \] 
@@ -247,21 +246,42 @@ faster. A subset of the results are shown below, taking the average of 5 runs fo
     \end{subfigure}
     \caption{Average runtimes of \texttt{strassen} and \texttt{standard} for matrix sizes $n$}
 \end{figure}
-We observe that, for $n > 29$, \texttt{strassen} is faster than \texttt{standard}. Thus, the empirical crossover point is $n_0 = 30$. 
+We observe that, for $n > 29$, \texttt{strassen} is faster than \texttt{standard}. Thus, the empirical crossover point is $n_0 = 29$. 
 \\
 
 We also observe that, for $n < 12$, \texttt{standard} is faster than \texttt{strassen}, and for $12 \leq n \leq 29$, it is unclear which algorithm is faster.
+
 \section{Discussion}
+\subsection{Results: Analytical v. Empirical}
+We observe that $n_0$ is lower than the theoretical value when tested empirically ($29 < 37$). This means that \texttt{Strassen} could handle matrices 8 sizes larger than predicted before it would be faster to swap over to the standard algorithm. This in turn implies one of two things; 1: \texttt{Strassen} was faster than we predicted, and better at handling the operations than we had calculated it to be, or 2: the standard algorithm was slower than we accounted for. \\
+
+Because we assumed that addition and multiplication come at a cost of $O(1)$ time it is nearly impossible that \texttt{Strassen} could be better than the mathematical estimate we gave it. Instead, what is likely is that our simplification of the standard algorithm and abbreviation of its operations to a constant time wasn't mirroring what happened in the system and how our computer processor handled those operations. Thus the standard algorithm, having to handle more operations than \texttt{Strassen} was slightly slower than we predicted, causing it to be more efficient to remain on \texttt{Strassen} for longer before crossing over. Hence the lower actual cross-over point. \\
+
+Another reason why the 
+
+
+A final third potential reason for why the standard algorithm is slower than expected is the repeated indexing in the triple-for-loop. The culprit is the continuous calling for the indexes of the $y$ array in this block of the code in the definition of the standard algorithm:
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.5\linewidth]{image.png}
+    \label{fig:enter-label}
+\end{figure}
+
+
+Python stores its arrays in contiguous blocks of memory, so in a double array as we have here, $arr[0, 0]$ would be stored right next to $arr[0, 1]$ which in turn is right next to $arr[0, 2]$. This makes accessing indexes in sequential order by the second index very convenient and friendly for the machine. (accessing the \texttt{x} array by increasing $k$. However, when indexing the $y$ array, since the SECOND index $j$ is being held constant by the outer for-loop while $k$ (the first index) changes, we are not accessing memory sequentially and continuously as would be convenient, and instead jumping around rows of memory. Cache that would be appropriate 
+
+
 \subsection{Implementation}
 \subsubsection{Padding: Handling Odd Sized Matrices}
-An interesting difficulty we encountered was how to efficiently implement padding into the algorithm. The initially intuitive solution we had was to pre-process the matrix with padding up to the nearest power of 2, and then post-process the result by only returning up to the original size after \texttt{strassen} algorithm had finished running to remove the pads. However, we wanted (yet struggled) to find an implementation that incorporated all the padding into the single \texttt{Strassen} function. The various calls of recursion made it difficult to keep track of when un-padding should be done, as defining it within the function would cause issues with recursive calls. \\
+An interesting difficulty we encountered was how to efficiently implement padding into the algorithm. The initially intuitive solution we had was to pre-process the matrix with padding up to the nearest power of 2, and then post-process the result by only returning up to the original size after \texttt{strassen} algorithm had finished running to remove the pads. However, we wanted (yet struggled) to find an implementation that incorporated all the padding into the single \texttt{strassen} function. The various calls of recursion made it difficult to keep track of when un-padding should be done, as defining it within the function would cause issues with recursive calls. \\
 
 Our next idea was to incorporate the padding as part of the \texttt{split} function call. We add a row and column of 0s for padding if the input matrix $x$ has an odd size, which will result in an even sized matrix, and then call \texttt{split} again to split the matrix evenly. We now prove that this is correct.
 \begin{claim}
    The result of multiplying the padded matrices is the same as the result of multiplying the original matrices.
 \end{claim}
 \begin{proof}
-    Let $A$ and $B$ be the original matrices, and $A'$ and $B'$ be the padded matrices. We have that
+    Let $A$ and $B$ be odd matrices, and $A'$ and $B'$ be the padded matrices. We have that
     \[
     A' = \begin{bmatrix}
         A & 0 \\
@@ -271,7 +291,7 @@ Our next idea was to incorporate the padding as part of the \texttt{split} funct
         0 & 0
     \end{bmatrix}
     \] 
-    We can now multiply the matrices:
+    We can now multiply the matrices using \texttt{strassen}, as they are now even-sized and can be split:
     \begin{align*}
         A'B' &= \begin{bmatrix}
             A & 0 \\
@@ -288,11 +308,10 @@ Our next idea was to incorporate the padding as part of the \texttt{split} funct
     We can see that, after removing the padding, the result is the same as the result of multiplying the original
     matrices, and the proof is complete.
 \end{proof}
-
-It was not necessarily unexpected, but timing the algorithms took a significant number of hours when iterating on the larger matrix sizes. This made it important to manage when edits would be made as to not interfere with the code while the program was running as then we would have to re-run to re-time it with the modifications.  \\
-
+% \subsubsection{Timing}
+% It was not necessarily unexpected, but timing the algorithms took a significant number of hours when iterating on the larger matrix sizes. This made it important to manage when edits would be made as to not interfere with the code while the program was running as then we would have to re-run to re-time it with the modifications.  \\
 \subsection{Optimizations}
-A small optimization we decided to add after preliminary testing was implementing the \texttt{winograd} form of the algorithm, maintaining the asymptotic runtime but reducing the number of additions/subtractions from 18 to 15. Mathematically, this changes the constant number of operations performed, and hypothetically reduces the cross-over point from 37 to 34\
+A small optimization we decided to add after preliminary testing was implementing the \texttt{winograd} form of the algorithm discussed in Remark 5 of Lecture 9, maintaining the asymptotic runtime but reducing the number of additions/subtractions from 18 to 15. Mathematically, this changes the constant number of operations performed, and hypothetically reduces the cross-over point from 37 to 34\
 \[2n^3 - n^2 = 7T(\frac{n}{2})+\textbf{15}(\frac{n}{2})^2\]
 \[2n^3-n^2 = 7(2(\frac{n}{2})^3-(\frac{n}{2})^2)+15(\frac{n}{2})^2\]\\
 
@@ -302,8 +321,69 @@ Similarly, accounting for the padding on numbers not power of two with the updat
 
 Which reduces to $n_0 \approx 34$, a minor reduction estimate.\\
 
+With empirical testing, we obtain the following data, averaging times from 5 trials:
+\begin{figure}[H]
+\centering
+\begin{tabular}{c|c|c}
+Matrix Size & Average Time Winograd & Average Time Standard \\
+\hline
+1 & 3.814697265625e-06 & 1.71661376953125e-06 \\
+2 & 2.6178359985351562e-05 & 3.862380981445312e-06 \\
+3 & 8.440017700195312e-05 & 9.107589721679688e-06 \\
+4 & 4.191398620605469e-05 & 1.873970031738281e-05 \\
+5 & 9.965896606445312e-05 & 3.342628479003906e-05 \\
+6 & 8.044242858886718e-05 & 5.621910095214844e-05 \\
+7 & 0.00016927719116210938 & 8.921623229980468e-05 \\
+8 & 0.00015482902526855468 & 0.00013575553894042968 \\
+9 & 0.0002984523773193359 & 0.0001971721649169922 \\
+10 & 0.00027599334716796873 & 0.00026311874389648435 \\
+11 & 0.00046706199645996094 & 0.00033812522888183595 \\
+12 & 0.000435638427734375 & 0.0004309177398681641 \\
+13 & 0.000666666030883789 & 0.0005465984344482422 \\
+14 & 0.0006531238555908203 & 0.0006655693054199219 \\
+15 & 0.0009731292724609375 & 0.0008263587951660156 \\
+16 & 0.0009289741516113281 & 0.0009956836700439453 \\
+17 & 0.0013453960418701172 & 0.0011841297149658204 \\
+18 & 0.00130157470703125 & 0.0014186859130859374 \\
+19 & 0.001779794692993164 & 0.001665019989013672 \\
+20 & 0.0017538070678710938 & 0.0019189834594726563 \\
+21 & 0.0023659229278564452 & 0.002222633361816406 \\
+22 & 0.002311897277832031 & 0.0025493621826171873 \\
+23 & 0.0029861927032470703 & 0.002897500991821289 \\
+24 & 0.002963542938232422 & 0.0033051013946533204 \\
+25 & 0.0037668704986572265 & 0.003717947006225586 \\
+26 & 0.003761768341064453 & 0.004164743423461914 \\
+27 & 0.004654836654663086 & 0.004653787612915039 \\
+28 & 0.004636573791503906 & 0.005214595794677734 \\
+29 & 0.005778264999389648 & 0.005764532089233399 \\
+30 & 0.005742979049682617 & 0.006369829177856445 \\
+31 & 0.006974220275878906 & 0.00701904296875 \\
+32 & 0.006930398941040039 & 0.007732200622558594 \\
+33 & 0.00825643539428711 & 0.008376169204711913 \\
+34 & 0.008147287368774413 & 0.00911092758178711 \\
+35 & 0.009667158126831055 & 0.009928178787231446 \\
+36 & 0.009735441207885743 & 0.010892295837402343 \\
+37 & 0.011501312255859375 & 0.011954784393310547 \\
+38 & 0.011496591567993163 & 0.012907838821411133 \\
+39 & 0.01336979866027832 & 0.013849735260009766 \\
+40 & 0.013233804702758789 & 0.014958429336547851 \\
+41 & 0.015453815460205078 & 0.016249704360961913 \\
+42 & 0.015420484542846679 & 0.017423534393310548 \\
+43 & 0.01782994270324707 & 0.018680667877197264 \\
+44 & 0.01777782440185547 & 0.020090293884277344 \\
+45 & 0.020171403884887695 & 0.021331262588500977 \\
+46 & 0.020185375213623048 & 0.022751760482788087 \\
+47 & 0.022836875915527344 & 0.024216747283935545 \\
+48 & 0.02294459342956543 & 0.026280975341796874 \\
+49 & 0.026479005813598633 & 0.02758617401123047 \\
+50 & 0.025884246826171874 & 0.029093170166015626 \\
+
+\end{tabular}
+\end{figure}
 NEED DATA TO CHECK IF WINOGRAD IS ACTUALLY FASTER 
 
 \subsection{Matrix Choice}
-We chose to multiply all matrices between 1-50: powers of two and non-powers of two. The matrix choice considerably varies the number of operations that need to be conducted as for non-powers of two, padding and un-padding has to applied, adding extra cost and changing the size of the matrix that is operated on. Thus, to ensure that our $n_0$ value was sound across all variations of the operations and we'd get general results, we decided to not limit which types of matrices we tested. 
+We chose to multiply all matrices between 1-50: powers of two and non-powers of two. The matrix choice considerably varies the number of operations that need to be conducted as for non-powers of two, padding and un-padding has to applied, adding extra cost and changing the size of the matrix that is operated on. Thus, to ensure that our $n_0$ value was sound across all variations of the operations and we'd get general results, we decided to not limit which types of matrices we tested \\ 
+
+To ensure close to constant time arithmetic as possible, we chose to use random matrices with entries 0 and 1.
 \end{document}

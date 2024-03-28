@@ -1,16 +1,3 @@
-# Task 3: Triangle in random graphs: Recall that you can represent the adjacency matrix of a graph by a matrix A.
-# Consider an undirected graph. It turns out that A^3 can be used to determine the number of triangles in a gram: the
-# (ij)th entry in the matrix A^2 counts the paths from i to j of length two, and the (ij)th entry in the matrix A^3
-# counts the path from i to j of length 3. To count the number of triangles in a graph, we can simply add the entries
-# in the diagonal, and divide by 6. This is because the jth diagonal entry counts the number of paths of length 3 from
-# j to j. Each such path is a triangle, and each triangle is counted 6 times (for each of the vertices in the triangle,
-# it is counted once in each direction).
-
-# Create a random graph on 1024 vertices where each edge is included with probability p for each of the following
-# values fo p: p = 0.01, 0.02, 0.03, 0.04, and 0.05. Use your (Strassen's) matrix multiplication code to count the
-# number of triangels in each of the graphs, and compare it to the expected number of triangles, which is
-# \comb{1024}{3}p^3. Create a chart showing your results compared to the expectation.
-
 import strassen
 import numpy as np
 import random
@@ -43,6 +30,13 @@ def create_chart(n, ps, triangles):
     plt.legend()
     plt.show()
 
+def create_table(n, ps, triangles):
+    print("Graph Probability $p$ & Count of triangles & Expected count of triangles \\\\")
+    print("\hline")
+    for i in range(len(ps)):
+        print(f"{ps[i]} & {triangles[i]} & {expected_count(n, ps[i])} \\\\")
+    print("\hline")
+
 def main():
     n = 1024
     ps = [0.01, 0.02, 0.03, 0.04, 0.05]
@@ -50,7 +44,21 @@ def main():
     for p in ps:
         G = create_graph(n, p)
         triangles.append(count_triangles(G))
+    create_table(n, ps, triangles)
     create_chart(n, ps, triangles)
 
+def average_trials_main():
+    n = 1024
+    ps = [0.01, 0.02, 0.03, 0.04, 0.05]
+    trials = 10
+    triangles = []
+    for p in ps:
+        total = 0
+        for _ in range(trials):
+            G = create_graph(n, p)
+            total += count_triangles(G)
+        triangles.append(total/trials)
+    create_table(n, ps, triangles)
+
 if __name__ == '__main__':
-    main()
+    average_trials_main()
