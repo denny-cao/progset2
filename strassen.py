@@ -1,21 +1,3 @@
-# Task 1: Assume that the cost of any single arithmetic operation (adding, subtracting, multiplying, or dividing two real
-# numbers) is 1, and that all other operations are free. Consider the following variant of Strassen's algorithm: to
-# multiply two n by n matrices, start using Strassen's algorithm, but stop the recursion at some size n_0, and use the
-# conventional algorithm below that point. You have to find a suitable value for n_0 --- the cross-over point.
-# Analytically determine the value of n_0 that optimizes the running time of this algorithm in this model (That is,
-# solve the appropriate equations, somehow, numerically.) This gives a crude estimate for the cross-over point between
-# Strassen's algorithm and the standard matrix multiplication algorithm
-
-# Task 2: Implement your variant of Strassen's algorithm and the standard matrix multiplication algorithm to find the
-# corss-over point experimentally. Experimentally optimize for n_0 and compare the experimental results with your
-# estimate from above. Make both implementations as efficient as possible. The actual cross-over point, which you would
-# like to make as small as possible, will depend on how efficiently you implement Strassne's algorithm. Your
-# implementation should work on any size matrices, not just those whose dimensions are a power of 2. To test your
-# algorithm, you might try matrices where each entry is randomly selected to be 0 or 1; similarly, you might try
-# matrices where each entry is randomly selected to be 0, 1, or 2, or instead 0, 1, or -1. We will test on integer
-# matrices, possibly of this form (You may assume integer inputs.) You need not try all of these, but do test your
-# algorithm adequately. 
-
 import numpy as np
 
 def split(x):
@@ -38,7 +20,7 @@ def split(x):
         x = np.pad(x, ((0, 1), (0, 1)))
         return split(x)
 
-def strassen(x, y, n_0=1):
+def strassen(x, y, n_0=31):
     """
     Strassen's algorithm for matrix multiplication
     """

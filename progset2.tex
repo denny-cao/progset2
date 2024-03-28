@@ -111,6 +111,7 @@
 \begin{document}
 \maketitle
 \thispagestyle{plain}
+
 \section{Quantitative Results}
 \subsection{Analytical Crossover Calculation}
 The crossover point is the point at which \texttt{strassen} becomes faster than the naive algorithm. We can calculate the crossover point by setting the two algorithms equal to each other and solving for $n$.
@@ -194,7 +195,7 @@ faster. A subset of the results are shown below, taking the average of 5 runs fo
             9 & 0.29582977 & 0.18420219 \\
             10 & 0.26364326 & 0.24600029 \\
             11 & 0.44384003 & 0.32444000 \\
-            12 & 0.41499138 & 0.42495727 \\
+            \textbf{12} & \textbf{0.41499138} & \textbf{0.42495727} \\
             13 & 0.70180892 & 0.57215691 \\
             14 & 0.67152977 & 0.70323944 \\
             15 & 0.98776817 & 0.87027550 \\
@@ -220,7 +221,7 @@ faster. A subset of the results are shown below, taking the average of 5 runs fo
 26 & 3.75418663 & 4.20546532 \\
 27 & 4.70714569 & 4.67915535 \\
 28 & 4.69846725 & 5.22465706 \\
-29 & 5.78403473 & 5.77650070 \\
+\textbf{29} & \textbf{5.78403473} & \textbf{5.77650070} \\
 30 & 5.74755669 & 6.42280579 \\
 31 & 6.94327354 & 7.02953339 \\
 32 & 6.93907738 & 7.74512291 \\
@@ -246,18 +247,63 @@ faster. A subset of the results are shown below, taking the average of 5 runs fo
     \end{subfigure}
     \caption{Average runtimes of \texttt{strassen} and \texttt{standard} for matrix sizes $n$}
 \end{figure}
-We observe that, for $n > 30$, \texttt{strassen} is faster than \texttt{standard}. Thus, the empirical crossover point is $n_0 = 30$. 
+We observe that, for $n > 29$, \texttt{strassen} is faster than \texttt{standard}. Thus, the empirical crossover point is $n_0 = 30$. 
 \\
 
-We also observe that, for $n < 11$, \texttt{standard} is faster than \texttt{strassen}, and for $11 \leq n \leq 30$, it is unclear which algorithm is faster.
+We also observe that, for $n < 12$, \texttt{standard} is faster than \texttt{strassen}, and for $12 \leq n \leq 29$, it is unclear which algorithm is faster.
 \section{Discussion}
-\subsection{Difficulties in Implementation}
-An interesting difficulty we encountered was how to efficiently implement padding into the algorithm. The initially intuitive solution we have is to pre-process the matrix with padding, and then post-process the result after \texttt{Strassen} algorithm had finished running to remove the pads. However, we wanted yet struggled to find an implementation that incorporated all the padding into the single \texttt{Strassen} function. The various calls of recursion made it difficult to keep track of when un-padding should be done, as defining it within the function would cause issues with recursive calls. \\
+\subsection{Implementation}
+\subsubsection{Padding: Handling Odd Sized Matrices}
+An interesting difficulty we encountered was how to efficiently implement padding into the algorithm. The initially intuitive solution we had was to pre-process the matrix with padding up to the nearest power of 2, and then post-process the result by only returning up to the original size after \texttt{strassen} algorithm had finished running to remove the pads. However, we wanted (yet struggled) to find an implementation that incorporated all the padding into the single \texttt{Strassen} function. The various calls of recursion made it difficult to keep track of when un-padding should be done, as defining it within the function would cause issues with recursive calls. \\
+
+Our next idea was to incorporate the padding as part of the \texttt{split} function call. We add a row and column of 0s for padding if the input matrix $x$ has an odd size, which will result in an even sized matrix, and then call \texttt{split} again to split the matrix evenly. We now prove that this is correct.
+\begin{claim}
+   The result of multiplying the padded matrices is the same as the result of multiplying the original matrices.
+\end{claim}
+\begin{proof}
+    Let $A$ and $B$ be the original matrices, and $A'$ and $B'$ be the padded matrices. We have that
+    \[
+    A' = \begin{bmatrix}
+        A & 0 \\
+        0 & 0
+    \end{bmatrix}, \quad B' = \begin{bmatrix}
+        B & 0 \\
+        0 & 0
+    \end{bmatrix}
+    \] 
+    We can now multiply the matrices:
+    \begin{align*}
+        A'B' &= \begin{bmatrix}
+            A & 0 \\
+            0 & 0
+        \end{bmatrix}\begin{bmatrix}
+            B & 0 \\
+            0 & 0
+        \end{bmatrix} \\
+             &= \begin{bmatrix}
+                 AB & 0 \\
+                 0 & 0
+             \end{bmatrix}
+    \end{align*}
+    We can see that, after removing the padding, the result is the same as the result of multiplying the original
+    matrices, and the proof is complete.
+\end{proof}
 
 It was not necessarily unexpected, but timing the algorithms took a significant number of hours when iterating on the larger matrix sizes. This made it important to manage when edits would be made as to not interfere with the code while the program was running as then we would have to re-run to re-time it with the modifications.  \\
 
+\subsection{Optimizations}
+A small optimization we decided to add after preliminary testing was implementing the \texttt{winograd} form of the algorithm, maintaining the asymptotic runtime but reducing the number of additions/subtractions from 18 to 15. Mathematically, this changes the constant number of operations performed, and hypothetically reduces the cross-over point from 37 to 34\
+\[2n^3 - n^2 = 7T(\frac{n}{2})+\textbf{15}(\frac{n}{2})^2\]
+\[2n^3-n^2 = 7(2(\frac{n}{2})^3-(\frac{n}{2})^2)+15(\frac{n}{2})^2\]\\
+
+Reducing the calculation gives $n_0 = 12$ for powers of two. 
+Similarly, accounting for the padding on numbers not power of two with the updated number of operations, we have: 
+\[2n^3 - n^2 = 7(2(\frac{n+1}{2})^3-(\frac{n+1}{2})^2)+\textbf{15}(\frac{n+1}{2})^2\]\\
+
+Which reduces to $n_0 \approx 34$, a minor reduction estimate.\\
+
+NEED DATA TO CHECK IF WINOGRAD IS ACTUALLY FASTER 
+
 \subsection{Matrix Choice}
-
-
-We chose to multiply matrices with powers of 2 because, with our implementation of \texttt{Strassen} with inputs of matrix size not of powers of 2, it would require an extra padding operation that would complicate and draw out the time.    
+We chose to multiply all matrices between 1-50: powers of two and non-powers of two. The matrix choice considerably varies the number of operations that need to be conducted as for non-powers of two, padding and un-padding has to applied, adding extra cost and changing the size of the matrix that is operated on. Thus, to ensure that our $n_0$ value was sound across all variations of the operations and we'd get general results, we decided to not limit which types of matrices we tested. 
 \end{document}
