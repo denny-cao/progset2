@@ -1,4 +1,5 @@
 import numpy as np
+import sys
 
 def split(x):
     """
@@ -95,3 +96,25 @@ def winograd(x, y, n_0=1):
     bottom = np.hstack((result3, result4))
 
     return np.vstack((top, bottom))
+
+def main():
+    if len(sys.argv) != 4:
+        print("Usage: python strassen.py <n>")
+        sys.exit(1)
+    else:
+        if sys.argv[1] == 0: # Flag for autograder
+            dim = sys.argv[2]
+            input_file = sys.argv[3]
+
+            # Read input matrices
+            with open(input_file, 'r') as f:
+                # First d^2 lines are for first matrix A, then next d^2 lines are for second matrix B
+                A = np.array([list(map(int, f.readline().split())) for _ in range(dim)])
+                B = np.array([list(map(int, f.readline().split())) for _ in range(dim)])
+
+            # Compute product using Strassen's algorithm
+            result = strassen(A, B)
+            # Print diagonal elements of the result matrix
+            for i in range(dim):
+                print(result[i, i])
+
