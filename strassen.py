@@ -21,7 +21,7 @@ def split(x):
         x = np.pad(x, ((0, 1), (0, 1)))
         return split(x)
 
-def strassen(x, y, n_0=31):
+def strassen(x, y, n_0=27):
     """
     Strassen's algorithm for matrix multiplication
     """
