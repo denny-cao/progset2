@@ -494,4 +494,4 @@ def opt_stand_v_regular():
         print(f'{size} & {avg_time_strassen / NUM_TRIALS} & {avg_time_standard / NUM_TRIALS} \\\\')
 
 if __name__ == '__main__':
-    test()
+    experiment3()

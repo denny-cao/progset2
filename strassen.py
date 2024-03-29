@@ -1,6 +1,21 @@
 import numpy as np
 import sys
 
+def optimal_padding(n, n_0=27):
+    """
+    Find the optimal padding for Strassen's algorithm by finding the nearest a*2^b >= n0 such that a is below or equal to n0, so that it is possible to split until crossover.
+    """
+
+    const = n
+    pow = 0
+
+    while const > n_0:
+        const += 1
+        const //= 2
+        pow += 1
+
+    return const * (2 ** pow) - n
+
 def split(x):
     """
     Split an n x n matrix x to four n/2 x n/2 submatrices, handling both even and odd n (A is the top left, B is the
@@ -8,18 +23,23 @@ def split(x):
     """
 
     n = x.shape[0]
+
     if n % 2 == 0:
         half = n // 2
-    
+
         A = x[:half, :half]
         B = x[:half, half:]
         C = x[half:, :half]
         D = x[half:, half:]
-    
+
         return A, B, C, D
-    else:
-        x = np.pad(x, ((0, 1), (0, 1)))
-        return split(x)
+
+    padding = optimal_padding(n)
+
+    # Pad x with zeroes
+    x = np.pad(x, ((0, padding), (0, padding)), mode='constant')
+
+    return split(x)
 
 def strassen(x, y, n_0=27):
     """
