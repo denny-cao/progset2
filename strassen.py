@@ -164,4 +164,4 @@ def main():
                 print(int(result[i, i]))
     
 if __name__ == "__main__":
-    print(optimal_padding(124))
+    main()
