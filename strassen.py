@@ -24,22 +24,29 @@ def split(x):
 
     n = x.shape[0]
 
-    if n % 2 == 0:
-        half = n // 2
-
-        A = x[:half, :half]
-        B = x[:half, half:]
-        C = x[half:, :half]
-        D = x[half:, half:]
-
-        return A, B, C, D
+#     if n % 2 == 0:
+#         half = n // 2
+# 
+#         A = x[:half, :half]
+#         B = x[:half, half:]
+#         C = x[half:, :half]
+#         D = x[half:, half:]
+#         return A, B, C, D
 
     padding = optimal_padding(n)
 
     # Pad x with zeroes
     x = np.pad(x, ((0, padding), (0, padding)), mode='constant')
 
-    return split(x)
+    half = x.shape[0] // 2
+
+    A = x[:half, :half]
+    B = x[:half, half:]
+    C = x[half:, :half]
+    D = x[half:, half:]
+
+    return A, B, C, D
+
 
 def strassen(x, y, n_0=27):
     """
@@ -157,4 +164,4 @@ def main():
                 print(int(result[i, i]))
     
 if __name__ == "__main__":
-    main()
+    print(optimal_padding(124))

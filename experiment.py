@@ -207,7 +207,7 @@ def test():
     """
 
     # Test Strassen's algorithm
-    matrix_sizes = [65, 121, 129, 257]
+    matrix_sizes = [8,16,31,32,62,124]
 
 
     for size in matrix_sizes:
@@ -220,6 +220,7 @@ def test():
         print(result_standard)
         print(result_strassen)
         assert np.allclose(result_standard, result_strassen)
+        print(f'Test passed for size {size}!')
         # assert np.allclose(result_standard, result_winograd[:x.shape[0], :x.shape[1]])
 
     print('All tests passed!')
@@ -494,4 +495,4 @@ def opt_stand_v_regular():
         print(f'{size} & {avg_time_strassen / NUM_TRIALS} & {avg_time_standard / NUM_TRIALS} \\\\')
 
 if __name__ == '__main__':
-    experiment3()
+    test()
