@@ -35,13 +35,13 @@ def strassen(x, y, n_0=31):
     E, F, G, H = split(y)
 
     # Recursively compute products
-    P1 = standard(A, F - H)
-    P2 = standard(A + B, H)
-    P3 = standard(C + D, E)
-    P4 = standard(D, G - E)
-    P5 = standard(A + D, E + H)
-    P6 = standard(B - D, G + H)
-    P7 = standard(A - C, E + F)
+    P1 = strassen(A, F - H)
+    P2 = strassen(A + B, H)
+    P3 = strassen(C + D, E)
+    P4 = strassen(D, G - E)
+    P5 = strassen(A + D, E + H)
+    P6 = strassen(B - D, G + H)
+    P7 = strassen(A - C, E + F)
 
     # Compute submatrices of the results
     result1 = -P2 + P4 + P5 + P6
@@ -64,15 +64,15 @@ def standard(x, y):
     result = np.zeros_like(x)
 
     for i in range(x.shape[0]):
-        for j in range(y.shape[1]):
-            for k in range(y.shape[0]):
+        for j in range(x.shape[0]):
+            for k in range(x.shape[0]):
                 result[i, j] += x[i, k] * y[k, j]
 
     return result
 
 def winograd(x, y, n_0=1):
     """
-    Winograd's algorithm for matrix multiplication.
+    Winograd's algorithm for matrix multiplication. From Wikipedia: https://en.wikipedia.org/wiki/Strassen_algorithm
     """
 
     if len(x) <= n_0:
@@ -96,6 +96,19 @@ def winograd(x, y, n_0=1):
     bottom = np.hstack((result3, result4))
 
     return np.vstack((top, bottom))
+
+def standard_optimized(x, y):
+    """
+    Optimize by changing order of loops ==> improve spatial locality (Almurayh 2022)
+    """
+    result = np.zeros_like(x)
+
+    for i in range(x.shape[0]):
+        for k in range(x.shape[0]):
+            for j in range(x.shape[0]):
+                result[i, j] += x[i, k] * y[k, j]
+
+    return result
 
 def main():
     if len(sys.argv) != 4:

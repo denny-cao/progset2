@@ -1,4 +1,4 @@
-import strassen
+from strassen import strassen
 import numpy as np
 import random
 import math
@@ -37,28 +37,49 @@ def create_table(n, ps, triangles):
         print(f"{ps[i]} & {triangles[i]} & {expected_count(n, ps[i])} \\\\")
     print("\hline")
 
-def main():
+def single_trial_table():
     n = 1024
     ps = [0.01, 0.02, 0.03, 0.04, 0.05]
     triangles = []
     for p in ps:
         G = create_graph(n, p)
-        triangles.append(count_triangles(G))
-    create_table(n, ps, triangles)
-    create_chart(n, ps, triangles)
+        expected = expected_count(n, p)
+        triangle = count_triangles(G)
+        triangles.append(triangle)
 
-def average_trials_main():
+    create_table(n, ps, triangles)
+
+def average_trials_graph():
     n = 1024
     ps = [0.01, 0.02, 0.03, 0.04, 0.05]
-    trials = 10
-    triangles = []
+    trials = 5
+
+    # Create dictionary to store separate trials
+    results = {}
+    for i in range(trials):
+        results[i] = []
+
     for p in ps:
-        total = 0
-        for _ in range(trials):
+        for i in range(trials):
             G = create_graph(n, p)
-            total += count_triangles(G)
-        triangles.append(total/trials)
-    create_table(n, ps, triangles)
+            triangle = count_triangles(G)
+            results[i].append(triangle)
+
+    # Calculate average of trials
+    averages = [0] * len(ps)
+    for i in range(trials):
+        for j in range(len(results[i])):
+            averages[j] += results[i][j]
+    averages = [average/trials for average in averages]
+
+    expected = [expected_count(n, p) for p in ps]
+
+    # Table of all trials and then a row for averages
+    for i in range(trials):
+        print(f"Trial {i+1}: {results[i]}")
+
+    print(f"Averages: {averages}")
+    print(f"Expected: {expected}")
 
 if __name__ == '__main__':
-    average_trials_main()
+    average_trials_graph()

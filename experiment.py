@@ -1,4 +1,4 @@
-from strassen import strassen, winograd, standard, split
+from strassen import strassen, winograd, standard, split, standard_optimized
 import time
 import numpy as np
 import matplotlib.pyplot as plt
@@ -408,6 +408,88 @@ def experiment5():
 
     print('Experiment completed!')
 
+def experiment6():
+    """
+    Generate tables for 0,1,2 matrices, -1,1 matrices and large random matrices
+    """
+
+    matrix_sizes = [x for x in range(1,51)]
+
+    print('0,1,2 matrices')
+    print('Matrix Size & Average Time Strassen & Average Time Standard \\\\')
+    print('\\hline')
+    for size in matrix_sizes:
+        avg_time_strassen = 0
+        avg_time_standard = 0
+        for i in range(NUM_TRIALS):
+            x = np.random.randint(0, 3, (size, size))
+            y = np.random.randint(0, 3, (size, size))
+
+            _, time_strassen = measure_time(strassen_test, x, y)
+            _, time_standard = measure_time(standard, x, y)
+
+            avg_time_strassen += time_strassen
+            avg_time_standard += time_standard
+
+        print(f'{size} & {avg_time_strassen / NUM_TRIALS} & {avg_time_standard / NUM_TRIALS} \\\\')
+
+    print('-1,1 matrices')
+    print('Matrix Size & Average Time Strassen & Average Time Standard \\\\')
+    print('\\hline')
+    for size in matrix_sizes:
+        avg_time_strassen = 0
+        avg_time_standard = 0
+        for i in range(NUM_TRIALS):
+            x = np.random.randint(-1, 2, (size, size))
+            y = np.random.randint(-1, 2, (size, size))
+
+            _, time_strassen = measure_time(strassen_test, x, y)
+            _, time_standard = measure_time(standard, x, y)
+
+            avg_time_strassen += time_strassen
+            avg_time_standard += time_standard
+
+        print(f'{size} & {avg_time_strassen / NUM_TRIALS} & {avg_time_standard / NUM_TRIALS} \\\\')
+
+    print('Random matrices')
+    print('Matrix Size & Average Time Strassen & Average Time Standard \\\\')
+    print('\\hline')
+    for size in matrix_sizes:
+        avg_time_strassen = 0
+        avg_time_standard = 0
+        for i in range(NUM_TRIALS):
+            x = np.random.randint(2**25, 2**26, (size, size))
+            y = np.random.randint(2**25, 2**26, (size, size))
+
+            _, time_strassen = measure_time(strassen_test, x, y)
+            _, time_standard = measure_time(standard, x, y)
+
+            avg_time_strassen += time_strassen
+            avg_time_standard += time_standard
+
+        print(f'{size} & {avg_time_strassen / NUM_TRIALS} & {avg_time_standard / NUM_TRIALS} \\\\')
+
+def opt_stand_v_regular():
+    matrix_sizes = [x for x in range(1,101)]
+
+    print('Optimized Standard')
+    print('Matrix Size & Average Time Optimized Standard & Average Time Standard \\\\')
+    print('\\hline')
+
+    for size in matrix_sizes:
+        avg_time_strassen = 0
+        avg_time_standard = 0
+        for i in range(NUM_TRIALS):
+            x = np.random.randint(0, 1, (size, size))
+            y = np.random.randint(0, 1, (size, size))
+
+            _, time_standard = measure_time(standard, x, y)
+            _, time_optimized = measure_time(standard_optimized, x, y)
+
+            avg_time_standard += time_standard
+            avg_time_strassen += time_optimized
+
+        print(f'{size} & {avg_time_strassen / NUM_TRIALS} & {avg_time_standard / NUM_TRIALS} \\\\')
 
 if __name__ == '__main__':
-    experiment5()
+    opt_stand_v_regular()
