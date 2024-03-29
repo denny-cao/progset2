@@ -26,6 +26,9 @@ def strassen(x, y, n_0=27):
     Strassen's algorithm for matrix multiplication
     """
 
+    x_org = x.shape[0]
+    y_org = y.shape[1]
+
     # Base case (stop recursion at crossover point n_0 and use standard algorithm)
     if x.shape[0] <= n_0:
         return standard(x, y)
@@ -53,7 +56,9 @@ def strassen(x, y, n_0=27):
     top = np.hstack((result1, result2))
     bottom = np.hstack((result3, result4))
 
-    return np.vstack((top, bottom))
+    strassen_matrix = np.vstack((top, bottom))
+
+    return strassen_matrix[:x_org, :y_org]
 
 def standard(x, y):
     """
